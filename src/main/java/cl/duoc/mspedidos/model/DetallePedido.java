@@ -30,8 +30,7 @@ public class DetallePedido {
     @NotNull(message = "El precio unitario es obligatorio")
     @Positive(message = "El precio unitario debe ser mayor a 0")
     private BigDecimal precioUnitario;
-
-    @NotNull(message = "El pedido es obligatorio")
+    
     @ManyToOne(optional = false)
     @JoinColumn(name = "pedido_id")
     private Pedido pedido;

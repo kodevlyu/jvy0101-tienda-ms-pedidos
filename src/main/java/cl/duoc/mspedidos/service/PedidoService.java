@@ -1,5 +1,6 @@
 package cl.duoc.mspedidos.service;
 
+import cl.duoc.mspedidos.client.PagosClient;
 import cl.duoc.mspedidos.exception.RecursoNoEncontradoException;
 import cl.duoc.mspedidos.model.DetallePedido;
 import cl.duoc.mspedidos.model.Pedido;
@@ -15,11 +16,14 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
     private final DetallePedidoRepository detallePedidoRepository;
+    private final PagosClient pagosClient;
 
     public PedidoService(PedidoRepository pedidoRepository,
-                         DetallePedidoRepository detallePedidoRepository) {
+                         DetallePedidoRepository detallePedidoRepository,
+                         PagosClient pagosClient) {
         this.pedidoRepository = pedidoRepository;
         this.detallePedidoRepository = detallePedidoRepository;
+        this.pagosClient = pagosClient;
     }
 
     public Pedido crear(Pedido pedido) {
@@ -28,7 +32,15 @@ public class PedidoService {
         if (pedido.getEstado() == null || pedido.getEstado().isBlank()) {
             pedido.setEstado("PENDIENTE");
         }
-        return pedidoRepository.save(pedido);
+        Pedido guardado = pedidoRepository.save(pedido);
+
+        boolean pagoRegistrado = pagosClient.registrarPago(
+                guardado.getId(), guardado.getTotal(), "TARJETA");
+        if (!pagoRegistrado) {
+            guardado.setEstado("PAGO_NO_REGISTRADO");
+            guardado = pedidoRepository.save(guardado);
+        }
+        return guardado;
     }
 
     public List<Pedido> listar() {
